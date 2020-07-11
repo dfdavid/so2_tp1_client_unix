@@ -8,4 +8,4 @@ tp1_client_u: main.c
 	$(CC) $(CFLAGS) -o tp1_client_u main.c
 
 clean:
-	rm tp1_server
+	rm tp1_client_u

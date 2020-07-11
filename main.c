@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <zconf.h>
 #include <fcntl.h>
+#include <asm/errno.h>
+#include <errno.h>
+#include <bits/signum.h>
+#include <signal.h>
 
 #define BUFFER_SIZE 1024
 #define DEFAULT_PATH "/tmp/socc"
@@ -19,6 +24,7 @@ int fd_set_blocking(int fd, int blocking);
  */
 int main(int argc, char *argv[]) {
 
+    signal(SIGPIPE, SIG_IGN);
     printf("DEBUG: ejecutando main \n");
     printf("Version del firmware: %s\n", firmware_version);
     int sockfd;
@@ -92,19 +98,48 @@ int main(int argc, char *argv[]) {
         }
         else if( strcmp(buffer_recepcion, "2") == 0 ){ // Start Scanning
             printf("se ha invocado a la funcion de escaneo de imagen\n\n");
+            memset(buffer_recepcion, 0, sizeof(buffer_recepcion));
             //////////start_scanning(sockfd);
         }
         else if( strcmp(buffer_recepcion, "3") == 0 ){ // Get Telemetry
+            memset(buffer_recepcion, 0, sizeof(buffer_recepcion));
             printf("se ha invocado a la funcion de envio de telemetria\n\n\n");
             ///////////send_telemetria();
         }
         else{ // manejo de errores: opciones no validas o perdida de conexion
-            printf("DEBUG: se recibio algo distinto de 1 2 o 3\n");
-            if (buffer_recepcion == NULL){
-                printf("buffer vacio, desconexion\n");
+            printf("DEBUG: se recibio un comando no valido\n");
+            if (send(sockfd, buffer_recepcion, sizeof(buffer_recepcion), 0) < 0){
+                perror("error en la comunicacion");
+                if (errno == EPIPE){
+                    //relanzar el cliente con execv o similar
+                    char ejecutable[100] = "";
+                    strcat(ejecutable, "./tp1_client_u" );
+                    char *argv[] = {"./tp1_client_u", NULL};
+                    //ejemplo de uso de excev
+                    /*
+                     https://pubs.opengroup.org/onlinepubs/009695399/functions/exec.html
+                     Using execv()
+
+                        The following example passes arguments to the ls command in the cmd array.
+
+                        #include <unistd.h>
+
+
+                        int ret;
+                        char *cmd[] = { "ls", "-l", (char *)0 };
+                        ...
+                        ret = execv ("/bin/ls", cmd);
+                    */
+                    if (execv(ejecutable, argv) < 0){
+                        perror("error al intentar reiniciar");
+                        exit(231);
+                    }
+                }
             }
             else{
                 printf("opcion no valida, eligir una opcion...\n");
+
+
             }
             sleep(2);
         }
