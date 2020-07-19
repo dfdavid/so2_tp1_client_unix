@@ -46,21 +46,24 @@ int main(int argc, char *argv[]) {
     char buffer_recepcion[BUFFER_SIZE];
 
     //crer socket
-    sockfd= socket(AF_UNIX, SOCK_STREAM, 0);
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     //int setting_ok;
-    fd_set_blocking(sockfd,1); //la funcion devuelve un int pero no se usa. CPPCHECK no compila si no se usa.
+    fd_set_blocking(sockfd, 1); //la funcion devuelve un int pero no se usa. CPPCHECK no compila si no se usa.
 
-    if (sockfd <0){
+    if (sockfd < 0) {
         perror("error al abrir el socket cliente");
     }
 
     //setear la estructura sockaddr
-    memset(&dest_addr, 0, sizeof(dest_addr) ); //limpieza de la estructura
-    dest_addr.sun_family= AF_UNIX;
+    memset(&dest_addr, 0, sizeof(dest_addr)); //limpieza de la estructura
+    dest_addr.sun_family = AF_UNIX;
     //dest_addr.sun_path= Hay que cargarlo, no se puede asignar
 
-    if (argv[1] != NULL){
-        strncpy(dest_addr.sun_path, argv[1], sizeof(dest_addr.sun_path));
+
+    if (argc > 1) {
+        if (argv[1] != NULL) {
+            strncpy(dest_addr.sun_path, argv[1], sizeof(dest_addr.sun_path));
+        }
     }
     else{
         char *path=DEFAULT_PATH;
@@ -150,8 +153,6 @@ int main(int argc, char *argv[]) {
             }
             else{
                 printf("opcion no valida, eligir una opcion...\n");
-
-
             }
             sleep(2);
         }
@@ -243,12 +244,7 @@ int update_firmware(int sockfd_arg){
         }
 
     }
-    //pongo esto en duro para probar...
-    char src[20];
-    //strcpy(src, "13624");
-    //strncpy(bytes_recibidos, src, sizeof(bytes_recibidos));
-    //se transforma el numero de bytes recibidos de network a host long (uint32_t)
-    //bytes_recibidos=ntohl(bytes_recibidos);
+
     printf("Cantidad de bytes en el archivo a recibir (stream TCP): %s\n", bytes_recibidos);
     char *ptr; //puntero requerido por la funcion strtol()
     long bytes_a_recibir=1;
